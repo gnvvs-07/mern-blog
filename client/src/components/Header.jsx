@@ -30,7 +30,7 @@ export default function Header() {
                 </Button>
                 {/* sign in */}
                 <Link to="/sign-in">
-                    <Button gradientDuoTone="purpleToBlue" className="inline">
+                    <Button gradientDuoTone="purpleToBlue" outline className="inline">
                         Login
                     </Button>
                 </Link>
