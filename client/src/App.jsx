@@ -5,11 +5,15 @@ import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
+import Header from "./components/Header";
 
 export default function App() {
   return (
     // all routing path declarations goes here
     <BrowserRouter>
+    {/* adding header to all pages */}
+    <Header/>
+    {/* pages continue here  */}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
