@@ -1,5 +1,6 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import userReducer from "./user/userSlice.js"; // Renamed 'useReducer' to 'userReducer'
+import themeReducer from "./theme/themeSlice.js";
 import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { persistStore } from "redux-persist";
@@ -7,6 +8,7 @@ import { persistStore } from "redux-persist";
 // Root reducer
 const rootReducer = combineReducers({
   user: userReducer, // Updated to use 'userReducer'
+  theme:themeReducer,
 });
 
 // Configuration for persisting the state
