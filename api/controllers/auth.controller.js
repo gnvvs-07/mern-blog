@@ -56,7 +56,7 @@ export const signin = async (req, res, next) => {
       { expiresIn: "1h" } // Token expires in 1 hour
     );
     // Setting the token as an HttpOnly cookie
-    res.cookie("userToken", token, { httpOnly: true }).json(others);
+    res.cookie("access_token", token, { httpOnly: true }).json(others);
   } catch (error) {
     next(error); // Middleware to handle errors
   }
@@ -71,7 +71,7 @@ export const google = async (req, res, next) => {
       const { password, ...rest } = user._doc;
       res
         .status(200)
-        .cookie("Access token", token, {
+        .cookie("access_token", token, {
           httpOnly: true,
         })
         .json(rest);
@@ -94,9 +94,9 @@ export const google = async (req, res, next) => {
       await newUser.save();
       const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
       const { password, ...rest } = newUser._doc;
-      res.status(200).cookie("Cookie", token, { http: true }).json(rest);
+      res.status(200).cookie("access_token", token, { http: true }).json(rest);
     }
   } catch (error) {
-    console.log(error);
+    next(error);
   }
 };

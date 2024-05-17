@@ -1,6 +1,6 @@
+import React, { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Alert, Button, TextInput } from "flowbite-react";
-import { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import {
@@ -9,14 +9,25 @@ import {
   ref,
   uploadBytesResumable,
 } from "firebase/storage";
+import {
+  updateFailure,
+  updateStart,
+  updateSuccess,
+} from "../redux/user/userSlice";
 import { app } from "../firebase";
 
 export default function DashProfile() {
+  const dispatch = useDispatch();
+  const [updateUserSuccess, setUpdateUserSuccess] = useState(null);
+  const [updateUserError, setUpdateUserError] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [imageFileUrl, setImageFileUrl] = useState(null);
   const [imageFileUploadProgress, setImageFileUploadProgress] = useState(0);
   const [imageFileUploadError, setImageFileUploadError] = useState(null);
-
+  const [imageFileUploading, setImageFileUploading] = useState(false);
+  const [formData, setFormData] = useState({});
+  const filePickerRef = useRef();
+  const { currentUser } = useSelector((state) => state.user);
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -24,22 +35,15 @@ export default function DashProfile() {
       setImageFileUrl(URL.createObjectURL(file));
     }
   };
-
-  const filePickerRef = useRef();
-
-  const { currentUser } = useSelector((state) => state.user);
-
   useEffect(() => {
     if (imageFile) {
       uploadImage();
     }
   }, [imageFile]);
 
-  const uploadImage = () => {
-    // Reset previous errors and progress
+  const uploadImage = async () => {
+    setImageFileUploading(true);
     setImageFileUploadError(null);
-    setImageFileUploadProgress(0);
-
     const storage = getStorage(app);
     const fileName = new Date().getTime() + imageFile.name;
     const storageRef = ref(storage, fileName);
@@ -54,19 +58,20 @@ export default function DashProfile() {
         setImageFileUploadProgress(progress);
       },
       (error) => {
-        // Handle upload error
         setImageFileUploadError(
           "Could not upload image (File must be less than 2MB)"
         );
-        // Reset state related to file upload
+        setImageFileUploadProgress(null);
         setImageFile(null);
         setImageFileUrl(null);
+        setImageFileUploading(false);
       },
       () => {
-        // Upload completed successfully
         getDownloadURL(uploadTask.snapshot.ref)
           .then((downloadURL) => {
             setImageFileUrl(downloadURL);
+            setFormData({ ...formData, profilePicture: downloadURL });
+            setImageFileUploading(false);
           })
           .catch((error) => {
             setImageFileUploadError("Could not get image download URL");
@@ -75,10 +80,53 @@ export default function DashProfile() {
     );
   };
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setUpdateUserError(null);
+    setUpdateUserSuccess(null);
+
+    if (Object.keys(formData).length === 0) {
+      setUpdateUserError("No changes made");
+      return;
+    }
+
+    if (imageFileUploading) {
+      setUpdateUserError("Please wait until Image uploaded completely");
+      return;
+    }
+
+    try {
+      dispatch(updateStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...formData, profilePicture: imageFileUrl }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        dispatch(updateFailure(data.message));
+        setUpdateUserError(data.message);
+      } else {
+        dispatch(updateSuccess(data));
+        setUpdateUserSuccess("User profile updated..");
+      }
+    } catch (error) {
+      dispatch(updateFailure(error.message));
+      setUpdateUserError(error.message);
+    }
+  };
+
   return (
     <div className="max-w-lg mx-auto p-3 w-full">
       <h1 className="my-8 text-center font-semibold text-3xl">Profile</h1>
-      <form className="flex flex-col gap-3">
+      <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
         <input
           type="file"
           accept="image/*"
@@ -119,7 +167,6 @@ export default function DashProfile() {
             }`}
           />
         </div>
-        {/* File upload error handling */}
         {imageFileUploadError && (
           <Alert color="failure">{imageFileUploadError}</Alert>
         )}
@@ -128,14 +175,21 @@ export default function DashProfile() {
           id="username"
           type="text"
           defaultValue={currentUser.username}
+          onChange={handleChange}
         />
         <TextInput
           placeholder="Email"
           id="email"
           type="email"
           defaultValue={currentUser.email}
+          onChange={handleChange}
         />
-        <TextInput placeholder="Password" id="password" type="password" />
+        <TextInput
+          placeholder="Password"
+          id="password"
+          type="password"
+          onChange={handleChange}
+        />
         <Button type="submit" gradientDuoTone="purpleToPink" outline>
           Update
         </Button>
@@ -144,11 +198,20 @@ export default function DashProfile() {
         <span>Delete Account</span>
         <span>Sign Out</span>
       </div>
-      {/* Display upload progress */}
       {imageFileUploadProgress > 0 && (
         <div className="text-gray-500 text-sm">
           Update Progress: {`${imageFileUploadProgress}% Uploaded`}
         </div>
+      )}
+      {updateUserSuccess && (
+        <Alert color="success" className="mt-5">
+          {updateUserSuccess}
+        </Alert>
+      )}
+      {updateUserError && (
+        <Alert color="failure" className="mt-5">
+          {updateUserError}
+        </Alert>
       )}
     </div>
   );
