@@ -46,16 +46,16 @@ export const signin = async (req, res, next) => {
     if (!validPassword) {
       return next(errorHandler(401, "Invalid Password and email combination"));
     }
+    // Setting the token as an HttpOnly cookie
+    const token = jwt.sign(
+      { id: validUser._id, isAdmin: validUser.isAdmin },
+      process.env.JWT_SECRET
+      // { expiresIn: "1h" } // Token expires in 1 hour
+    );
     // Separating sensitive fields from user data
     const { password: pass, ...others } = validUser._doc;
     dotenv.config();
     // Generating a JWT token with an expiration time (e.g., 1 hour)
-    const token = jwt.sign(
-      { id: validUser._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" } // Token expires in 1 hour
-    );
-    // Setting the token as an HttpOnly cookie
     res.cookie("access_token", token, { httpOnly: true }).json(others);
   } catch (error) {
     next(error); // Middleware to handle errors
@@ -67,7 +67,10 @@ export const google = async (req, res, next) => {
   try {
     const user = await User.findOne({ email });
     if (user) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+      const token = jwt.sign(
+        { id: user._id, isAdmin: user.isAdmin },
+        process.env.JWT_SECRET
+      );
       const { password, ...rest } = user._doc;
       res
         .status(200)
@@ -92,7 +95,7 @@ export const google = async (req, res, next) => {
       });
       // cookie setting
       await newUser.save();
-      const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
+      const token = jwt.sign({ id: newUser._id,isAdmin:newUser.isAdmin }, process.env.JWT_SECRET);
       const { password, ...rest } = newUser._doc;
       res.status(200).cookie("access_token", token, { http: true }).json(rest);
     }
