@@ -5,13 +5,30 @@ import { BsMoonStarsFill } from "react-icons/bs";
 import { FaSun } from "react-icons/fa6";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleTheme } from "../redux/theme/themeSlice.js";
+import { signoutSuccess } from "../redux/user/userSlice.js";
 export default function Header() {
-  const dispatch = useDispatch();
-  const { theme } = useSelector((state) => state.theme);
-  // getting current user
-  const { currentUser } = useSelector((state) => state.user);
-  // path declarations
   const path = useLocation().pathname;
+  const dispatch = useDispatch();
+  const { currentUser } = useSelector((state) => state.user);
+  const { theme } = useSelector((state) => state.theme);
+
+  const handleSignout = async () => {
+    try {
+      const res = await fetch("/api/user/signout", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.log(data.message);
+      } else {
+        dispatch(signoutSuccess());
+        window.location.href = "/sign-in";
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <Navbar className="border-b-2">
       <Link
@@ -64,7 +81,7 @@ export default function Header() {
               <Dropdown.Item>Profile</Dropdown.Item>
             </Link>
             <Dropdown.Divider />
-            <Dropdown.Item>Sign Out</Dropdown.Item>
+            <Dropdown.Item onClick={handleSignout}>Sign Out</Dropdown.Item>
           </Dropdown>
         ) : (
           <Link to="/sign-in">

@@ -16,6 +16,7 @@ import {
   deleteUserStart,
   deleteUserSuccess,
   deleteUserFailure,
+  signoutSuccess,
 } from "../redux/user/userSlice";
 import { app } from "../firebase";
 import { IoIosWarning } from "react-icons/io";
@@ -144,6 +145,23 @@ export default function DashProfile() {
       dispatch(deleteUserFailure(error.message));
     }
   };
+  const handleSignout = async () => {
+    try {
+      // sign out handler function
+      const res = await fetch("/api/user/signout", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.log(data.message);
+      } else {
+        // redux here
+        dispatch(signoutSuccess());
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="max-w-lg mx-auto p-3 w-full">
       <h1 className="my-8 text-center font-semibold text-3xl">Profile</h1>
@@ -219,7 +237,9 @@ export default function DashProfile() {
         <span onClick={() => setShowModel(true)} className="cursor-pointer">
           Delete Account
         </span>
-        <span>Sign Out</span>
+        <span className="cursor-pointer" onClick={handleSignout}>
+          Sign Out
+        </span>
       </div>
       {imageFileUploadProgress > 0 && (
         <div className="text-gray-500 text-sm">
