@@ -1,24 +1,33 @@
 import { Sidebar } from "flowbite-react";
 import { useEffect, useState } from "react";
-import { HiUser, HiArrowCircleRight } from "react-icons/hi";
+import {
+  HiUser,
+  HiArrowCircleRight,
+  HiOutlineDocumentText,
+} from "react-icons/hi";
 import { Link, useLocation } from "react-router-dom";
 import { signoutSuccess } from "../redux/user/userSlice";
 import { useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
+
 export default function DashSidebar() {
+  const {currentUser} = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const location = useLocation();
   const [tab, setTab] = useState("");
+
   useEffect(() => {
-    // getting the location params
+    // Getting the location params
     const urlParams = new URLSearchParams(location.search);
-    const tabFormUrl = urlParams.get("tab");
-    if (tabFormUrl) {
-      setTab(tabFormUrl);
+    const tabFromUrl = urlParams.get("tab");
+    if (tabFromUrl) {
+      setTab(tabFromUrl);
     }
   }, [location.search]);
+
   const handleSignout = async () => {
     try {
-      // sign out handler function
+      // Sign out handler function
       const res = await fetch("/api/user/signout", {
         method: "POST",
       });
@@ -26,27 +35,39 @@ export default function DashSidebar() {
       if (!res.ok) {
         console.log(data.message);
       } else {
-        // redux here
+        // Redux here
         dispatch(signoutSuccess());
       }
     } catch (error) {
       console.log(error);
     }
   };
+
   return (
     <Sidebar className="w-full md">
-      <Sidebar.ItemGroup>
+      <Sidebar.ItemGroup className="flex flex-col gap-2">
         <Link to="/dashboard?tab=profile">
           <Sidebar.Item
             active={tab === "profile"}
             icon={HiUser}
-            label={"User"}
+            label={currentUser.isAdmin ? "Admin" : "User"}
             labelColor="dark"
             as="div"
           >
             Profile
           </Sidebar.Item>
         </Link>
+        {currentUser.isAdmin && (
+          <Link to="/dashboard?tab=posts">
+            <Sidebar.Item
+              active={tab === "posts"}
+              icon={HiOutlineDocumentText}
+              as="div"
+            >
+              Posts
+            </Sidebar.Item>
+          </Link>
+        )}
         <Sidebar.Item
           icon={HiArrowCircleRight}
           className="cursor-pointer"
