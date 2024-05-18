@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Alert, Button, Modal, TextInput } from "flowbite-react";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import { Link } from "react-router-dom";
 import {
   getDownloadURL,
   getStorage,
@@ -21,6 +22,7 @@ import {
 import { app } from "../firebase";
 import { IoIosWarning } from "react-icons/io";
 import { errorHandler } from "../../../api/utils/error";
+
 export default function DashProfile() {
   const dispatch = useDispatch();
   const [updateUserSuccess, setUpdateUserSuccess] = useState(null);
@@ -33,7 +35,7 @@ export default function DashProfile() {
   const [showModel, setShowModel] = useState(false);
   const [formData, setFormData] = useState({});
   const filePickerRef = useRef();
-  const { currentUser, error } = useSelector((state) => state.user);
+  const { currentUser, error, loading } = useSelector((state) => state.user);
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -229,9 +231,27 @@ export default function DashProfile() {
           type="password"
           onChange={handleChange}
         />
-        <Button type="submit" gradientDuoTone="purpleToPink" outline>
-          Update
+        <Button
+          type="submit"
+          gradientDuoTone="purpleToPink"
+          outline
+          disabled={loading || imageFileUploading}
+        >
+          {loading ? "loading..." : "Update"}
         </Button>
+        {/* create a post if user is an admin */}
+        {currentUser.isAdmin && (
+          <Link to={"/create-post"}>
+            <Button
+              type="button"
+              className="w-full"
+              gradientMonochrome="purple"
+              outline
+            >
+              Create a post
+            </Button>
+          </Link>
+        )}
       </form>
       <div className="text-red-500 flex justify-between mt-7">
         <span onClick={() => setShowModel(true)} className="cursor-pointer">
