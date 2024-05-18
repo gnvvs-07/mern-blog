@@ -1,5 +1,5 @@
+import React, { useState } from "react";
 import { TextInput, Select, FileInput, Button, Alert } from "flowbite-react";
-import { useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import {
@@ -11,11 +11,15 @@ import {
 import { app } from "../firebase";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import { useNavigate } from "react-router-dom";
 export default function CreatePost() {
+  const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [imageUploadProgress, setImageUploadProgress] = useState(null);
   const [imageUploadError, setImageUploadError] = useState(null);
-  const [formData, setFormData] = useState({}); //empty form data initially
+  const [formData, setFormData] = useState({});
+  const [publishError, setPublishError] = useState(null);
+
   const handleUploadImage = async () => {
     try {
       if (!file) {
@@ -23,10 +27,12 @@ export default function CreatePost() {
         return;
       }
       setImageUploadError(null);
-      const storage = getStorage(app); //firebase connnection
+
+      const storage = getStorage(app);
       const fileName = new Date().getTime() + "-" + file.name;
       const storageRef = ref(storage, fileName);
       const uploadTask = uploadBytesResumable(storageRef, file);
+
       uploadTask.on(
         "state_changed",
         (snapshot) => {
@@ -55,20 +61,54 @@ export default function CreatePost() {
       console.log(error);
     }
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/post/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPublishError(data.message);
+      } else {
+        setPublishError(null);
+        // Clear form data on successful submission
+        setFormData({});
+        // Redirect to home page
+        navigate(`/post/${data.slug}`);
+      }
+    } catch (error) {
+      setPublishError("Something went wrong");
+    }
+  };
+
   return (
     <div className="p-3 max-w-3xl mx-auto min-h-screen">
       <h1 className="text-center text-4xl my-4 font-semibold">Create a post</h1>
-      <form className="flex flex-col gap-4">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        {/* Title and Category inputs */}
         <div className="flex flex-col gap-4 sm:flex-row justify-between">
-          {/* form starts here */}
           <TextInput
             className="flex-1"
             type="text"
             placeholder="Title"
             required
-            id="title"
+            value={formData.title || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
           />
-          <Select>
+          <Select
+            value={formData.category || "uncategorized"}
+            onChange={(e) =>
+              setFormData({ ...formData, category: e.target.value })
+            }
+          >
             <option value="uncategorized">Select Category</option>
             <option value="python">Python</option>
             <option value="reactjs">React.js</option>
@@ -78,6 +118,8 @@ export default function CreatePost() {
             <option value="full-stack">Full Stack Web Development</option>
           </Select>
         </div>
+
+        {/* Image Upload */}
         <div className="flex gap-5 justify-between items-center border-4 border-teal-400 border-dotted p-3">
           <FileInput
             type="file"
@@ -102,10 +144,13 @@ export default function CreatePost() {
             ) : (
               "Upload Image"
             )}
-            Upload Image
           </Button>
         </div>
+
+        {/* Image upload error */}
         {imageUploadError && <Alert color="failure">{imageUploadError}</Alert>}
+
+        {/* Display uploaded image */}
         {formData.image && (
           <img
             src={formData.image}
@@ -113,15 +158,27 @@ export default function CreatePost() {
             className="w-full h-72 object-cover"
           />
         )}
+
+        {/* Quill Editor for content */}
         <ReactQuill
           theme="snow"
           placeholder="Write something"
           className="h-80 mb-10"
-          required
+          value={formData.content || ""}
+          onChange={(value) => setFormData({ ...formData, content: value })}
         />
+
+        {/* Submit Button */}
         <Button type="submit" gradientDuoTone="tealToLime" outline>
           POST
         </Button>
+
+        {/* Display publish error */}
+        {publishError && (
+          <Alert className="mt-5" color="failure">
+            {publishError}
+          </Alert>
+        )}
       </form>
     </div>
   );
