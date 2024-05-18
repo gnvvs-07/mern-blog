@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Alert, Button, TextInput } from "flowbite-react";
+import { Alert, Button, Modal, TextInput } from "flowbite-react";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import {
@@ -13,9 +13,13 @@ import {
   updateFailure,
   updateStart,
   updateSuccess,
+  deleteUserStart,
+  deleteUserSuccess,
+  deleteUserFailure,
 } from "../redux/user/userSlice";
 import { app } from "../firebase";
-
+import { IoIosWarning } from "react-icons/io";
+import { errorHandler } from "../../../api/utils/error";
 export default function DashProfile() {
   const dispatch = useDispatch();
   const [updateUserSuccess, setUpdateUserSuccess] = useState(null);
@@ -25,9 +29,10 @@ export default function DashProfile() {
   const [imageFileUploadProgress, setImageFileUploadProgress] = useState(0);
   const [imageFileUploadError, setImageFileUploadError] = useState(null);
   const [imageFileUploading, setImageFileUploading] = useState(false);
+  const [showModel, setShowModel] = useState(false);
   const [formData, setFormData] = useState({});
   const filePickerRef = useRef();
-  const { currentUser } = useSelector((state) => state.user);
+  const { currentUser, error } = useSelector((state) => state.user);
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -122,7 +127,23 @@ export default function DashProfile() {
       setUpdateUserError(error.message);
     }
   };
-
+  const handleDeleteUser = async () => {
+    setShowModel(false);
+    try {
+      dispatch(deleteUserStart());
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        dispatch(deleteUserFailure(data.message));
+      } else {
+        dispatch(deleteUserSuccess(data));
+      }
+    } catch (error) {
+      dispatch(deleteUserFailure(error.message));
+    }
+  };
   return (
     <div className="max-w-lg mx-auto p-3 w-full">
       <h1 className="my-8 text-center font-semibold text-3xl">Profile</h1>
@@ -195,7 +216,9 @@ export default function DashProfile() {
         </Button>
       </form>
       <div className="text-red-500 flex justify-between mt-7">
-        <span>Delete Account</span>
+        <span onClick={() => setShowModel(true)} className="cursor-pointer">
+          Delete Account
+        </span>
         <span>Sign Out</span>
       </div>
       {imageFileUploadProgress > 0 && (
@@ -213,6 +236,44 @@ export default function DashProfile() {
           {updateUserError}
         </Alert>
       )}
+      {error && (
+        <Alert color="failure" className="mt-5">
+          {error}
+        </Alert>
+      )}
+      <Modal
+        show={showModel}
+        onClose={() => setShowModel(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <IoIosWarning className="mx-auto text-red-700 text-4xl" />
+            <h3 className="mt-2 text-red-500">
+              Are you sure you want to delete your account?
+            </h3>
+            <div className="flex flex-col gap-3">
+              {/* button for delete account */}
+              <Button
+                gradientDuoTone="pinkToOrange"
+                outline
+                onClick={handleDeleteUser}
+              >
+                Yes Delete my Account
+              </Button>
+              <Button
+                onClick={() => setShowModel(false)}
+                gradientDuoTone="cyanToBlue"
+                outline
+              >
+                No, Cancel
+              </Button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }
