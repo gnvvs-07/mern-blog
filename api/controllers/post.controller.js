@@ -2,27 +2,22 @@ import Post from "../models/post.model.js";
 import { errorHandler } from "../utils/error.js";
 
 export const create = async (req, res, next) => {
-  // checking if admin or not
   if (!req.user.isAdmin) {
-    //checking cookie for admin property
-    return next(errorHandler(403, "Only admins are allowed to post. "));
+    return next(errorHandler(403, "You are not allowed to create a post"));
   }
-  // processing good kind of posts only to be posted
   if (!req.body.title || !req.body.content) {
-    return next(errorHandler(400, "Please provide title and content. "));
+    return next(errorHandler(400, "Please provide all required fields"));
   }
-  // creating post
   const slug = req.body.title
     .split(" ")
     .join("-")
     .toLowerCase()
-    .replace(/[^a-zA-Z0-9]/g, "-");
+    .replace(/[^a-zA-Z0-9-]/g, "");
   const newPost = new Post({
     ...req.body,
     slug,
     userId: req.user.id,
   });
-  //   error handling
   try {
     const savedPost = await newPost.save();
     res.status(201).json(savedPost);
@@ -36,37 +31,33 @@ export const getposts = async (req, res, next) => {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.order === "asc" ? 1 : -1;
-
-    // Constructing the query object based on request parameters
-    const query = {};
-    if (req.query.userId) query.userId = req.query.userId;
-    if (req.query.category) query.category = req.query.category;
-    if (req.query.slug) query.slug = req.query.slug;
-    if (req.query.postId) query._id = req.query.postId;
-    if (req.query.searchItem) {
-      query.$or = [
-        { title: { $regex: req.query.searchItem, $options: "i" } },
-        { content: { $regex: req.query.searchItem, $options: "i" } },
-      ];
-    }
-
-    const posts = await Post.find(query) // Pass the query object to the find method
-      .sort({ updatedAt: sortDirection }) // Moved sort after find
+    const posts = await Post.find({
+      ...(req.query.userId && { userId: req.query.userId }),
+      ...(req.query.category && { category: req.query.category }),
+      ...(req.query.slug && { slug: req.query.slug }),
+      ...(req.query.postId && { _id: req.query.postId }),
+      ...(req.query.searchTerm && {
+        $or: [
+          { title: { $regex: req.query.searchTerm, $options: "i" } },
+          { content: { $regex: req.query.searchTerm, $options: "i" } },
+        ],
+      }),
+    })
+      .sort({ updatedAt: sortDirection })
       .skip(startIndex)
       .limit(limit);
 
-    // Total posts
-    const totalPosts = await Post.countDocuments(query); // Pass the same query to countDocuments
+    const totalPosts = await Post.countDocuments();
 
-    // Total posts in the last month
     const now = new Date();
+
     const oneMonthAgo = new Date(
       now.getFullYear(),
       now.getMonth() - 1,
       now.getDate()
     );
+
     const lastMonthPosts = await Post.countDocuments({
-      ...query,
       createdAt: { $gte: oneMonthAgo },
     });
 
@@ -81,14 +72,12 @@ export const getposts = async (req, res, next) => {
 };
 
 export const deletepost = async (req, res, next) => {
-  // only an admin who made this post can delete that
-  if (!req.user.isAdmin && req.user.id !== req.params.userId) {
-    return next(errorHandler(403, "You are not allowed to do that"));
+  if (!req.user.isAdmin || req.user.id !== req.params.userId) {
+    return next(errorHandler(403, "You are not allowed to delete this post"));
   }
   try {
-    // logic to delete post
     await Post.findByIdAndDelete(req.params.postId);
-    res.status(200).json({ message: "Post deleted successfully" });
+    res.status(200).json("The post has been deleted");
   } catch (error) {
     next(error);
   }
@@ -96,7 +85,7 @@ export const deletepost = async (req, res, next) => {
 
 export const updatepost = async (req, res, next) => {
   if (!req.user.isAdmin || req.user.id !== req.params.userId) {
-    return next(errorHandler(403, "You are not allowed to do that"));
+    return next(errorHandler(403, "You are not allowed to update this post"));
   }
   try {
     const updatedPost = await Post.findByIdAndUpdate(

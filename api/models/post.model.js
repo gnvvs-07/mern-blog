@@ -13,6 +13,7 @@ const postSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
+      unique:true,
     },
     image: {
       type: String,
@@ -26,6 +27,7 @@ const postSchema = new mongoose.Schema(
     slug: {
       type: String,
       required: true,
+      unique:true,
     },
   },
   { timestamps: true }
