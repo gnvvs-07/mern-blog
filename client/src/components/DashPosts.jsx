@@ -1,4 +1,4 @@
-import { Table } from "flowbite-react";
+import { Button, Table } from "flowbite-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -6,7 +6,26 @@ import { Link } from "react-router-dom";
 export default function DashPosts() {
   const { currentUser } = useSelector((state) => state.user);
   const [userPosts, setUserPosts] = useState([]);
-
+  const [showMore, setShowMore] = useState(true);
+  const handleShowMore = async () => {
+    // start index
+    const startIndex = userPosts.length;
+    try {
+      // show more posts logic
+      const res = await fetch(
+        `/api/post/getposts?userId=${currentUser._id}&startIndex=${startIndex}`
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setUserPosts((prev) => [...prev, ...data.posts]);
+        if (data.posts.length < 9) {
+          setShowMore(false);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -14,6 +33,9 @@ export default function DashPosts() {
         const data = await res.json();
         if (res.ok) {
           setUserPosts(data.posts);
+          if (data.posts.length < 9) {
+            setShowMore(false);
+          }
         }
       } catch (error) {
         console.log(error);
@@ -54,16 +76,19 @@ export default function DashPosts() {
                     </Link>
                   </Table.Cell>
                   <Table.Cell>
-                    <Link to={`post/${post.slug}`}>
-                      {post.title}
-                    </Link>
+                    <Link to={`post/${post.slug}`}>{post.title}</Link>
                   </Table.Cell>
-                  <Table.Cell className="text-blue-500">{post.category}</Table.Cell>
+                  <Table.Cell className="text-blue-500">
+                    {post.category}
+                  </Table.Cell>
                   <Table.Cell>
                     <span className="text-red-500 hover:underline">Delete</span>
                   </Table.Cell>
                   <Table.Cell>
-                    <Link to={`update-post/${post._id}`} className="text-green-500 hover:underline" >
+                    <Link
+                      to={`update-post/${post._id}`}
+                      className="text-green-500 hover:underline"
+                    >
                       <span>Edit</span>
                     </Link>
                   </Table.Cell>
@@ -71,6 +96,16 @@ export default function DashPosts() {
               ))}
             </Table.Body>
           </Table>
+          {showMore && (
+            <Button
+              outline
+              gradientDuoTone="purpleToBlue"
+              className="mx-auto"
+              onClick={handleShowMore}
+            >
+              Show More
+            </Button>
+          )}
         </>
       ) : (
         <p>No posts yet</p>
