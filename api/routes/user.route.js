@@ -16,5 +16,6 @@ router.put("/update/:userId", verifyToken, updateUser); //update user route
 router.delete("/delete/:userId", verifyToken, deleteUser); //delete user route
 router.post("/signout",signout);
 router.get("/getusers",verifyToken,getUsers);
+
 // export
 export default router;
