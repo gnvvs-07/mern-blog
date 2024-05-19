@@ -107,7 +107,7 @@ export default function DashPosts() {
                   </Table.Cell>
                   <Table.Cell>
                     <span
-                      className="text-red-500 hover:underline"
+                      className="text-red-500 hover:underline cursor-pointer"
                       onClick={() => {
                         setShowModal(true);
                         setPostIdToDelete(post._id);
@@ -118,7 +118,7 @@ export default function DashPosts() {
                   </Table.Cell>
                   <Table.Cell>
                     <Link
-                      to={`update-post/${post._id}`}
+                      to={`/update-post/${post._id}`}
                       className="text-green-500 hover:underline"
                     >
                       <span>Edit</span>

@@ -1,34 +1,38 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+// pages
 import Home from "./pages/Home";
 import About from "./pages/About";
+import SignIn from "./pages/SignIn";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import SignUp from "./pages/SignUp";
-import SignIn from "./pages/SignIn";
+import CreatePost from "./pages/CreatePost";
+import UpdatePost from "./pages/UpdatePost";
+
+// components
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import PriveteRoute from "./components/PriveteRoute";
-import OnlyAdminPriveteRoute from "./components/OnlyAdminPriveteRoute";
-import CreatePost from "./pages/CreatePost";
+// validation routes
+import PrivateRoute from "./components/PrivateRoute";
+import OnlyAdminPrivateRoute from "./components/OnlyAdminPrivateRoute";
 
 export default function App() {
   return (
-    // all routing path declarations goes here
     <BrowserRouter>
-      {/* adding header to all pages */}
       <Header />
-      {/* pages continue here  */}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        <Route path="/sign-up" element={<SignUp />} />
         <Route path="/sign-in" element={<SignIn />} />
-        <Route element={<PriveteRoute />}>
+        <Route path="/sign-up" element={<SignUp />} />
+        <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
-        <Route element={<OnlyAdminPriveteRoute />}>
+        <Route element={<OnlyAdminPrivateRoute />}>
           <Route path="/create-post" element={<CreatePost />} />
+          <Route path="/update-post/:postId" element={<UpdatePost />} />
         </Route>
+
         <Route path="/projects" element={<Projects />} />
       </Routes>
       <Footer />
