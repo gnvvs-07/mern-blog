@@ -4,21 +4,33 @@ import { Link } from "react-router-dom";
 
 export default function CallToAction() {
   const { currentUser } = useSelector((state) => state.user);
+  const isAuthenticated = currentUser !== null;
+  const isAdmin = isAuthenticated && currentUser.isAdmin;
+
   return (
     <div>
       <div className="">
-        {!currentUser.isAdmin ? (
+        {!isAuthenticated ? (
+          <div className="text-gray-500 flex justify-between">
+            <h2 className="cursor-default">
+              Welcome! Sign up to access more features.
+            </h2>
+            <Link to={"/sign-up"}>
+              <Button color="primary">Sign Up</Button>
+            </Link>
+          </div>
+        ) : isAdmin ? (
+          <div className="flex justify-center text-center border p-3 rounded-md border-dotted">
+            <Link to={"/dashboard?tab=profile"}>
+              <Button color="success">Go To Profile</Button>
+            </Link>
+          </div>
+        ) : (
           <div className="text-gray-500 flex justify-between">
             <h2 className="cursor-default">Want to become an admin ?</h2>
             <a href="https://forms.gle/VTq7k1Hui6PTaLUU8" target="_blank">
               Fill this google Form
             </a>
-          </div>
-        ) : (
-          <div className="flex justify-center text-center border p-3 rounded-md border-dotted">
-            <Link to={"/dashboard?tab=profile"}>
-              <Button color="success">Go To profile</Button>
-            </Link>
           </div>
         )}
       </div>
