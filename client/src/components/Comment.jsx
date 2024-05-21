@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import { Link } from "react-router-dom";
-export default function Comment({ comment }) {
+import { FaThumbsUp } from "react-icons/fa";
+export default function Comment({ comment, onLike }) {
   const { currentUser } = useSelector((state) => state.user);
   const [user, setUser] = useState({});
-  console.log(user);
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -33,6 +33,25 @@ export default function Comment({ comment }) {
           />
           <div>
             <span>{user ? `@${user.username}` : "Anonymous"}</span>
+          </div>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => onLike(comment._id)}
+              className={`text-gray-400 hover:text-blue-500 ${
+                currentUser &&
+                comment.likes.includes(currentUser._id) &&
+                "!text-blue-500"
+              }`}
+            >
+              <FaThumbsUp className="text-sm" />
+            </button>
+            <p className="text-gray-500">
+              {comment.numberOfLikes > 0 &&
+                comment.numberOfLikes +
+                  " " +
+                  (comment.numberOfLikes === 1 ? "like" : "likes")}
+            </p>
           </div>
         </div>
         <div className="mt-2">

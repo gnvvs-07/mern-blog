@@ -4,7 +4,9 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { LiaCommentSolid } from "react-icons/lia";
 import Comment from "../components/Comment";
+import { useNavigate } from "react-router-dom";
 export default function CommentSection({ postId }) {
+  const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.user);
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
@@ -47,7 +49,7 @@ export default function CommentSection({ postId }) {
         setComment("");
         setCommentError(null);
         setShowSuccessAlert(true);
-        setComments([data,...comments]);
+        setComments([data, ...comments]);
         setTimeout(() => {
           setShowSuccessAlert(false);
         }, 5000);
@@ -75,6 +77,35 @@ export default function CommentSection({ postId }) {
     };
     getComments();
   }, [postId]);
+  // handle comments
+  const handleLike = async (commentId) => {
+    try {
+      if (!currentUser) {
+        navigate("/sign-in");
+        return;
+      }
+      const res = await fetch(`/api/comment/likeComment/${commentId}`, {
+        method: "PUT",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setComments(
+          comments.map((comment) =>
+            comment._id === commentId
+              ? {
+                  ...comment,
+                  likes: data.likes,
+                  numberOfLikes: data.likes.length,
+                }
+              : comment
+          )
+        );
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto w-full p-2">
       <div
@@ -157,7 +188,7 @@ export default function CommentSection({ postId }) {
             </div>
           </div>
           {comments.map((comment) => (
-            <Comment key={comment._id} comment={comment} />
+            <Comment key={comment._id} comment={comment} onLike={handleLike} />
           ))}
         </>
       )}
