@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import { Link } from "react-router-dom";
-import { FaThumbsUp } from "react-icons/fa";
-export default function Comment({ comment, onLike }) {
+import { FaEdit, FaThumbsUp } from "react-icons/fa";
+import { Button, Textarea } from "flowbite-react";
+export default function Comment({ comment, onLike, onEdit }) {
   const { currentUser } = useSelector((state) => state.user);
   const [user, setUser] = useState({});
+  const [editedContent, setEditedContent] = useState(comment.content);
+  const [isEditing, setIsEditing] = useState(false);
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -21,6 +24,30 @@ export default function Comment({ comment, onLike }) {
     };
     getUser();
   }, [comment]);
+  // handle edit function
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditedContent(comment.content);
+  };
+  // saving after editing
+  const handleSave = async () => {
+    try {
+      // fetch the edited comment and save in the backend in json format
+      const res = await fetch(`/api/comment/editComment/${comment._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content: editedContent }),
+      });
+      if (res.ok) {
+        setIsEditing(false);
+        onEdit(comment, editedContent);
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
   return (
     <div className="border-b border-gray-500">
       <div className="flex justify-between mt-2 ">
@@ -52,6 +79,17 @@ export default function Comment({ comment, onLike }) {
                   " " +
                   (comment.numberOfLikes === 1 ? "like" : "likes")}
             </p>
+            {/* edit button */}
+            {currentUser && currentUser._id === comment.userId && (
+              <button
+                type="button"
+                title="edit"
+                className="mx-5 text-green-500"
+                onClick={handleEdit}
+              >
+                <FaEdit className="text-sm" />
+              </button>
+            )}
           </div>
         </div>
         <div className="mt-2">
@@ -59,15 +97,36 @@ export default function Comment({ comment, onLike }) {
         </div>
       </div>
 
-      <div className="p-3 mx-auto my-1">
-        {currentUser ? (
-          <span>{comment.content}</span>
-        ) : (
-          <Link to={"/sign-up"} className="dark:text-gray-600">
-            sign up to see comment
-          </Link>
-        )}
-      </div>
+      {isEditing ? (
+        <>
+          <Textarea
+            className="w-full outline my-2 mx-auto"
+            value={editedContent}
+            onChange={(e) => {
+              setEditedContent(e.target.value);
+            }}
+          />
+          <div className="flex justify-between mb-1">
+            {/* buttons for save and cnacel */}
+            <Button outline color="success" onClick={handleSave}>
+              Save
+            </Button>
+            <Button outline color="failure" onClick={() => setIsEditing(false)}>
+              cancel
+            </Button>
+          </div>
+        </>
+      ) : (
+        <div className="p-3 mx-auto my-1">
+          {currentUser ? (
+            <span>{comment.content}</span>
+          ) : (
+            <Link to={"/sign-up"} className="dark:text-gray-600">
+              sign up to see comment
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }
