@@ -1,10 +1,11 @@
-import { Alert, Button, Textarea } from "flowbite-react";
+import { Alert, Button, Modal, Textarea } from "flowbite-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { LiaCommentSolid } from "react-icons/lia";
 import Comment from "../components/Comment";
 import { useNavigate } from "react-router-dom";
+import { IoIosWarning } from "react-icons/io";
 export default function CommentSection({ postId }) {
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.user);
@@ -13,8 +14,9 @@ export default function CommentSection({ postId }) {
   const [commentError, setCommentError] = useState(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showErrorAlert, setShowErrorAlert] = useState(false); // State for error alert
+  const [showModal, setShowModal] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
   const overlayRef = useRef(null);
-  // console.log(comments)
   function showOverlay() {
     var originalImageSrc = document.getElementById("image").src;
     document.getElementById("enlarged-image").src = originalImageSrc;
@@ -115,6 +117,23 @@ export default function CommentSection({ postId }) {
       )
     );
   };
+  const handleDelete = async (commentId) => {
+    setShowModal(false);
+    try {
+      if (!currentUser) {
+        navigate("/sign-in");
+        return;
+      }
+      const res = await fetch(`/api/comment/deleteComment/${commentId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setComments(comments.filter((comment) => comment._id !== commentId));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="max-w-2xl mx-auto w-full p-2">
       <div
@@ -202,10 +221,47 @@ export default function CommentSection({ postId }) {
               comment={comment}
               onLike={handleLike}
               onEdit={handleEdit}
+              onDelete={(commentId) => {
+                setShowModal(true);
+                setCommentToDelete(commentId);
+              }}
             />
           ))}
         </>
       )}
+      <Modal
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <IoIosWarning className="mx-auto text-red-700 text-4xl" />
+            <h3 className="mt-2 text-red-500">
+              Are you sure you want to delete this comment?
+            </h3>
+            <div className="flex flex-col gap-3">
+              {/* button for delete account */}
+              <Button
+                gradientDuoTone="pinkToOrange"
+                outline
+                onClick={() => handleDelete(commentToDelete)}
+              >
+                Yes Delete the comment
+              </Button>
+              <Button
+                onClick={() => setShowModal(false)}
+                gradientDuoTone="cyanToBlue"
+                outline
+              >
+                No, Cancel
+              </Button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

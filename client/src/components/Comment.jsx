@@ -4,7 +4,8 @@ import moment from "moment";
 import { Link } from "react-router-dom";
 import { FaEdit, FaThumbsUp } from "react-icons/fa";
 import { Button, Textarea } from "flowbite-react";
-export default function Comment({ comment, onLike, onEdit }) {
+import { MdOutlineDeleteForever } from "react-icons/md";
+export default function Comment({ comment, onLike, onEdit, onDelete }) {
   const { currentUser } = useSelector((state) => state.user);
   const [user, setUser] = useState({});
   const [editedContent, setEditedContent] = useState(comment.content);
@@ -93,6 +94,11 @@ export default function Comment({ comment, onLike, onEdit }) {
           </div>
         </div>
         <div className="mt-2">
+          {currentUser && currentUser._id === comment.userId && (
+            <button type="button" title="edit" className="mx-5 text-red-500" onClick={()=>onDelete(comment._id)}>
+              <MdOutlineDeleteForever className="text-xl" />
+            </button>
+          )}
           <span>{moment(comment.createdAt).fromNow()}</span>
         </div>
       </div>
