@@ -1,16 +1,18 @@
 import { Alert, Button, Textarea } from "flowbite-react";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-
+import { LiaCommentSolid } from "react-icons/lia";
+import Comment from "../components/Comment";
 export default function CommentSection({ postId }) {
   const { currentUser } = useSelector((state) => state.user);
   const [comment, setComment] = useState("");
+  const [comments, setComments] = useState([]);
   const [commentError, setCommentError] = useState(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showErrorAlert, setShowErrorAlert] = useState(false); // State for error alert
   const overlayRef = useRef(null);
-
+  // console.log(comments)
   function showOverlay() {
     var originalImageSrc = document.getElementById("image").src;
     document.getElementById("enlarged-image").src = originalImageSrc;
@@ -45,6 +47,7 @@ export default function CommentSection({ postId }) {
         setComment("");
         setCommentError(null);
         setShowSuccessAlert(true);
+        setComments([data,...comments]);
         setTimeout(() => {
           setShowSuccessAlert(false);
         }, 5000);
@@ -57,7 +60,21 @@ export default function CommentSection({ postId }) {
       }, 5000);
     }
   };
-
+  useEffect(() => {
+    // get comments
+    const getComments = async () => {
+      try {
+        const res = await fetch(`/api/comment/getPostComments/${postId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setComments(data);
+        }
+      } catch (error) {
+        console.log(error.message);
+      }
+    };
+    getComments();
+  }, [postId]);
   return (
     <div className="max-w-2xl mx-auto w-full p-2">
       <div
@@ -125,6 +142,24 @@ export default function CommentSection({ postId }) {
         <Alert color="failure" className="mt-5">
           Error While Posting
         </Alert>
+      )}
+      {comments.length === 0 ? (
+        <p className="text-gray-500">No Comments Yet</p>
+      ) : (
+        <>
+          <div className="">
+            <div className="flex p-2 border-b border-gray-500 justify-between">
+              <div className="flex gap-2">
+                <p className="text-gray-500 font-semibold">comments</p>
+                <p>{comments.length}</p>
+              </div>
+              <LiaCommentSolid className="mt-1" color="gray" />
+            </div>
+          </div>
+          {comments.map((comment) => (
+            <Comment key={comment._id} comment={comment} />
+          ))}
+        </>
       )}
     </div>
   );

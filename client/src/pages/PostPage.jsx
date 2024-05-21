@@ -62,7 +62,7 @@ export default function PostPage() {
         alt="postimage.png"
         className="mt-10 p-3 max-h-[600px] w-full object-cover"
       />
-      <div className="flex justify-between p-3 border-b border-slate-700 mx-auto w-full max-w-2xl text-xs">
+      <div className="flex justify-between p-3 use mx-auto w-full max-w-2xl text-xs">
         <span className="italic">
           {post && new Date(post.createdAt).toLocaleDateString()}
         </span>
