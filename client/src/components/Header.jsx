@@ -1,16 +1,28 @@
 import { Avatar, Button, Dropdown, Navbar, TextInput } from "flowbite-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
-import { BsMoonStarsFill } from "react-icons/bs";
-import { FaSun } from "react-icons/fa6";
+import { FaMoon, FaSun } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
-import { toggleTheme } from "../redux/theme/themeSlice.js";
-import { signoutSuccess } from "../redux/user/userSlice.js";
+import { toggleTheme } from "../redux/theme/themeSlice";
+import { signoutSuccess } from "../redux/user/userSlice";
+import { useEffect, useState } from "react";
+
 export default function Header() {
   const path = useLocation().pathname;
+  const location = useLocation();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.user);
   const { theme } = useSelector((state) => state.theme);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const searchTermFromUrl = urlParams.get("searchTerm");
+    if (searchTermFromUrl) {
+      setSearchTerm(searchTermFromUrl);
+    }
+  }, [location.search]);
 
   const handleSignout = async () => {
     try {
@@ -22,11 +34,18 @@ export default function Header() {
         console.log(data.message);
       } else {
         dispatch(signoutSuccess());
-        window.location.href = "/sign-in";
       }
     } catch (error) {
-      console.log(error);
+      console.log(error.message);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const urlParams = new URLSearchParams(location.search);
+    urlParams.set("searchTerm", searchTerm);
+    const searchQuery = urlParams.toString();
+    navigate(`/search?${searchQuery}`);
   };
 
   return (
@@ -35,32 +54,32 @@ export default function Header() {
         to="/"
         className="self-center whitespace-nowrap text-sm sm:text-xl font-semibold dark:text-white"
       >
-        <span className="px-2 py-1 bg-gradient-to-r from-blue-600 via bg-purple-600 to-red-600 text-white rounded-md font-bold">
-          L
+        <span className="px-2 py-1 bg-gradient-to-r from-blue-600 via-purple-600 to-red-600 rounded-lg text-white">
+          L's
         </span>
-        Blogs
+        Blog
       </Link>
-      {/* adding search icons from flowbite */}
-      <form>
+      <form onSubmit={handleSubmit}>
         <TextInput
-          placeholder="search"
-          className="hidden lg:inline"
-          // adding search icon
+          type="text"
+          placeholder="Search..."
           rightIcon={AiOutlineSearch}
+          className="hidden lg:inline"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
       </form>
-      {/* button for small icon */}
-      <Button color="blue" className="lg:hidden" pill>
+      <Button className="w-12 h-10 lg:hidden" color="gray" pill>
         <AiOutlineSearch />
       </Button>
       <div className="flex gap-2 md:order-2">
         <Button
-          color="blue"
+          className="w-12 h-10 hidden sm:inline"
+          color="gray"
           pill
-          className="hidden sm:inline"
           onClick={() => dispatch(toggleTheme())}
         >
-          {theme === "dark" ? <FaSun /> : <BsMoonStarsFill />}
+          {theme === "light" ? <FaSun /> : <FaMoon />}
         </Button>
         {currentUser ? (
           <Dropdown
@@ -71,9 +90,8 @@ export default function Header() {
             }
           >
             <Dropdown.Header>
-              {/* details of user */}
               <span className="block text-sm">@{currentUser.username}</span>
-              <span className="block text-sm font-bold truncate">
+              <span className="block text-sm font-medium truncate">
                 {currentUser.email}
               </span>
             </Dropdown.Header>
@@ -81,32 +99,26 @@ export default function Header() {
               <Dropdown.Item>Profile</Dropdown.Item>
             </Link>
             <Dropdown.Divider />
-            <Dropdown.Item onClick={handleSignout}>Sign Out</Dropdown.Item>
+            <Dropdown.Item onClick={handleSignout}>Sign out</Dropdown.Item>
           </Dropdown>
         ) : (
           <Link to="/sign-in">
-            <Button gradientDuoTone="purpleToBlue" outline className="inline">
-              Login
+            <Button gradientDuoTone="purpleToBlue" outline>
+              Sign In
             </Button>
           </Link>
         )}
-        {/* sign in */}
-        {/* navbar toggle */}
         <Navbar.Toggle />
       </div>
-      {/* navabr compoennts/pages */}
       <Navbar.Collapse>
         <Navbar.Link active={path === "/"} as={"div"}>
           <Link to="/">Home</Link>
         </Navbar.Link>
         <Navbar.Link active={path === "/about"} as={"div"}>
-          <Link to="about">About</Link>
+          <Link to="/about">About</Link>
         </Navbar.Link>
         <Navbar.Link active={path === "/projects"} as={"div"}>
-          <Link to="projects">Projects</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === "/dashboard"} as={"div"}>
-          <Link to="dashboard">Dashboard</Link>
+          <Link to="/projects">Projects</Link>
         </Navbar.Link>
       </Navbar.Collapse>
     </Navbar>
